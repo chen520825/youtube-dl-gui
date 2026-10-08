@@ -1,0 +1,58 @@
+{
+    "outputTypes": [
+        "msi",
+        "msix"
+    ],
+    "outputDirectory": "dist",
+    "outputFileName" : "$.packageName_$.version_$.platform",
+    "packageName": "yt-dlg",
+    "publisher": "Oleksis Fraga",
+    "version": "1.8.6",
+    "platform": "x64",
+    "installDir": "%PROGRAMFILES%\\$.publisher\\$.packageName",
+    "compresionLevel": "Max",
+    "icon": "youtube_dl_gui\\data\\pixmaps\\youtube-dl-gui.ico",
+    "fileSystemEntries": [
+        {
+            "sourcePath": "dist\\$.packageName",
+            "targetPath": "$.installDir\\$.packageName"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "$.packageName",
+            "target": "$.installDir\\$.packageName\\$.packageName.exe",
+            "workingDirectory": "$.installDir\\$.packageName"
+        }
+    ],
+    "msi": {
+        "upgradeCode": "{791090ED-EB1C-4652-863F-CEF06E5B9E69}",
+        "installDialog": {
+            "packageDescription": "Youtube Downloader GUI",
+            "primaryAccent": "#0556BD",
+            "publisherUrl": "https://yt-dlg.github.io/yt-dlg/",
+            "eulaUrl": "https://github.com/oleksis/youtube-dl-gui/blob/master/LICENSE"
+        },
+        "properties": [
+            {
+                "name": "ARPURLINFOABOUT",
+                "value": "https://yt-dlg.github.io/yt-dlg/"
+            },
+            {
+                "name": "ARPCONTACT",
+                "value": "oleksis.fraga@gmail.com"
+            },
+            {
+                "name": "ARPHELPLINK",
+                "value": "https://github.com/oleksis/youtube-dl-gui/discussions"
+            }
+        ]
+    },
+    "msix": {
+        "publisher": "CN=$.publisher",
+        "packageName": "$.packageName",
+        "packageDisplayName": "$.msi.installDialog.packageDescription",
+        "publisherDisplayName": "$.publisher",
+        "platform": "x64"
+    }
+}

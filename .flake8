@@ -1,0 +1,29 @@
+[flake8]
+exclude =
+    .git,
+    .tx,
+    .tox,
+    .tox.back,
+    .vscode,
+    __pycache__,
+    old,
+    build,
+    dist,
+    tests,
+    venv,
+    venv.back,
+    .venv,
+    .venv.back,
+    yt_dlg.egg-info,
+    yt-dlg,
+    docs,
+    devscripts,
+    setup.py
+max-line-length = 104
+extend-ignore = E203,
+    F401,
+    W503,
+    N802,
+    N803,
+    N806,
+    N812

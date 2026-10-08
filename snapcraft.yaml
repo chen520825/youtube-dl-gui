@@ -1,107 +1,53 @@
-name: open-video-downloader
-title: Open Video Downloader
-base: core24
-version: '3.2.1'
-license: 'AGPL-3.0-or-later'
-website: 'https://jely2002.github.io/youtube-dl-gui'
-issues: 'https://github.com/jely2002/youtube-dl-gui/issues'
-source-code: 'https://github.com/jely2002/youtube-dl-gui'
-contact: 'ytdlgui@jelleglebbeek.com'
-donation:
-  - 'https://github.com/sponsors/jely2002'
-  - 'https://ko-fi.com/jely2002'
-summary: A fast, modern video & audio downloader for YouTube and more
+name: yt-dlg
+summary: A cross platform front-end GUI of the popular youtube-dl written in wxPython.
+website: https://yt-dlg.github.io/yt-dlg/
+license: Unlicense
+icon: youtube_dl_gui/data/icons/hicolor/256x256/apps/youtube-dl-gui.png
 description: |
-  Open Video Downloader is a cross-platform, open-source app that makes it easy to download videos, audio, subtitles, and metadata from YouTube and hundreds of other supported websites. It provides a clean desktop interface on top of the powerful yt-dlp engine, so you get advanced download features without needing the command line.
-
-  You can choose the quality and format, download individual items or entire playlists, and manage downloads with pause and resume support. Open Video Downloader is free, privacy-friendly, and fully open source, with no ads, no tracking, and no unnecessary complexity.
-
+      Download your favorite videos from supported sites.
+adopt-info: yt-dlg
 grade: stable
-confinement: strict
-
-icon: src-tauri/icons/icon.png
-
-platforms:
-  amd64:
-    build-on: amd64
-    build-for: amd64
-  arm64:
-    build-on: arm64
-    build-for: arm64
-
-layout:
-  /usr/lib/webkit2gtk-4.1:
-    bind: $SNAP/usr/lib/webkit2gtk-4.1
+confinement: strict  # or 'devmode'
+base: core22
+architectures:
+  - build-on: amd64
 
 apps:
-  open-video-downloader:
-    command: usr/bin/open-video-downloader
-    desktop: usr/share/applications/Open Video Downloader.desktop
-    extensions: [gnome]
+  yt-dlg:
+    command: bin/yt-dlg
+    extensions:
+      # HINT: Adds plugs and changes environment variables when building and running
+      - gnome
     plugs:
-      - network
-      - network-status
+      - desktop
+      - desktop-legacy
+      - x11
+      - pulseaudio
       - home
-      - unity7
-      - single-instance-plug
-    slots:
-      - single-instance
-
-slots:
-  single-instance:
-    interface: dbus
-    bus: session
-    name: com-jelleglebbeek-youtube-dl-gui.SingleInstance
-
-plugs:
-  single-instance-plug:
-    interface: dbus
-    bus: session
-    name: com-jelleglebbeek-youtube-dl-gui.SingleInstance
+      - gsettings
+      - network
+      - network-bind
+      - removable-media
+    desktop: usr/share/applications/yt-dlg.desktop
 
 parts:
-  build-app:
-    plugin: dump
-    source: .
-    build-snaps:
-      - node/24/stable
-      - rustup/latest/stable
-    build-packages:
-      - libwebkit2gtk-4.1-dev
-      - build-essential
-      - curl
-      - wget
-      - file
-      - libssl-dev
-      - libgtk-3-dev
-      - libayatana-appindicator3-dev
-      - librsvg2-dev
-      - dpkg
+  yt-dlg:
+    plugin: python
+    source: https://github.com/oleksis/youtube-dl-gui.git
+    source-tag: v1.8.5
+    override-pull: |
+      craftctl default
+      craftctl set version=$(git describe --long --tags --always --match=v*.*.* | sed 's/v//')
     stage-packages:
-      - libwebkit2gtk-4.1-0
-      - libayatana-appindicator3-1
+      - libsdl2-2.0-0
+    python-packages:
+      - pypubsub == 4.0.3
+      - https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04/wxPython-4.2.0-cp310-cp310-linux_x86_64.whl
     override-build: |
-      set -eu
-
-      npm ci
-      
-      rustup toolchain install stable
-      rustup default stable
-      cargo install --locked cargo-about
-
-      npm run tauri build -- --bundles deb --no-sign -c '{"plugins":{"updater":{"active":false}}}'
-      dpkg -x src-tauri/target/release/bundle/deb/*.deb "$SNAPCRAFT_PART_INSTALL/"
-      mkdir -p "$CRAFT_PART_INSTALL/usr/lib/webkit2gtk-4.1"
-
-      for TRIPLET in x86_64-linux-gnu aarch64-linux-gnu; do
-        SRC="$CRAFT_PART_INSTALL/usr/lib/$TRIPLET/webkit2gtk-4.1"
-        if [ -d "$SRC" ]; then
-          cp -a "$SRC/." "$CRAFT_PART_INSTALL/usr/lib/webkit2gtk-4.1/"
-          break
-        fi
-      done
-
-      DESKTOP_FILE="$SNAPCRAFT_PART_INSTALL/usr/share/applications/Open Video Downloader.desktop"
-      if [ -f "$DESKTOP_FILE" ]; then
-        sed -i -E 's/^Categories=.*/Categories=Network;AudioVideo;Utility;/' "$DESKTOP_FILE"
-      fi
+      python3 -m pip install --upgrade setuptools
+      python3 -m pip install polib
+      python3 setup.py build_trans
+      install -Dm644 "yt-dlg.desktop" -t "$CRAFT_PART_INSTALL/usr/share/applications/"
+      craftctl default
+    organize:
+      usr/lib/$CRAFT_ARCH_TRIPLET/pulseaudio/libpulsecommon-15.99.so: usr/lib/$CRAFT_ARCH_TRIPLET/libpulsecommon-15.99.so

@@ -1,0 +1,130 @@
+name: Upload Release Asset
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build_windows_exe:
+    runs-on: windows-latest
+    outputs:
+      yt-dlg_version: ${{ steps.dump_version.outputs.yt-dlg_version }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      sha2_windows: ${{ steps.sha2_file.outputs.sha2_windows }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10.10
+      uses: actions/setup-python@v4
+      with:
+          python-version: '3.10.10'
+          architecture: 'x64'
+    - name: Install Requirements
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install -r requirements/requirements.in -r requirements/requirements-binaries.in
+    - name: Build Translations
+      run: python setup.py build_trans
+    - name: Build PyInstaller
+      run: |
+        pyinstaller -w -F --icon=youtube_dl_gui/data/pixmaps/youtube-dl-gui.ico --add-data="youtube_dl_gui/data;youtube_dl_gui/data" --add-data="youtube_dl_gui/locale;youtube_dl_gui/locale" --exclude-module=tests --version-file=file_version_info.txt --noconfirm --name=yt-dlg youtube_dl_gui/__main__.py
+    - name: Dump version
+      id: dump_version
+      shell: python
+      run: |
+        import json
+        import os
+        import re
+
+        exec(compile(open('youtube_dl_gui/version.py').read(), 'youtube_dl_gui/version.py', 'exec'))
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            print(f'yt-dlg_version={__version__}', file=fh)
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: yt-dlg ${{ steps.dump_version.outputs.yt-dlg_version }}
+        draft: false
+        prerelease: false
+    - name: Upload Executable yt-dlg.exe
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./dist/yt-dlg.exe
+        asset_name: yt-dlg.exe
+        asset_content_type: application/octet-stream
+    - name: Get SHA2-256SUMS for yt-dlg.exe
+      id: sha2_file
+      run: echo "sha2_windows=$((Get-FileHash dist\yt-dlg.exe -Algorithm SHA256).Hash.ToLower())" >> $GITHUB_OUTPUT
+  build_ubuntu_bdist:
+    needs: build_windows_exe
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10.12
+      uses: actions/setup-python@v4
+      with:
+          python-version: '3.10.12'
+          architecture: 'x64'
+    - name: Build Binary using PyInstaller ManyLinux 2.28 Docker Action
+      uses: oleksis/pyinstaller-manylinux@v2.3.1
+      with:
+        pyinstaller-params: "['-w', '-F', '--add-data=youtube_dl_gui/data:youtube_dl_gui/data', '--add-data=youtube_dl_gui/locale:youtube_dl_gui/locale', '--exclude-module=tests', '--name=yt-dlg', 'youtube_dl_gui/__main__.py']"
+    - name: Upload Binary Distribution to Release
+      id: upload-release-binary
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.build_windows_exe.outputs.upload_url }}
+        asset_path: ./dist/yt-dlg
+        asset_name: yt-dlg
+        asset_content_type: application/octet-stream
+    - name: Get SHA2-256SUMS for yt-dlg
+      id: sha2_file_binary
+      run: echo "sha2_linux=$(sha256sum dist/yt-dlg | awk '{print $1}')" >> $GITHUB_OUTPUT
+    - name: Make SHA2-256SUMS file
+      env:
+        SHA2_WINDOWS: ${{ needs.build_windows_exe.outputs.sha2_windows }}
+        SHA2_LINUX_BINARY: ${{ steps.sha2_file_binary.outputs.sha2_linux }}
+      run: |
+        echo "$SHA2_WINDOWS  yt-dlg.exe" > SHA2-256SUMS
+        echo "$SHA2_LINUX_BINARY  yt-dlg" >> SHA2-256SUMS
+    - name: Upload SHA2-256SUMS to Release
+      id: upload-release-sha2
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.build_windows_exe.outputs.upload_url }}
+        asset_path: ./SHA2-256SUMS
+        asset_name: SHA2-256SUMS
+        asset_content_type: text/plain
+  publish_pypi:
+    needs: build_ubuntu_bdist
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.10.12
+      uses: actions/setup-python@v4
+      with:
+          python-version: '3.10.12'
+          architecture: 'x64'
+    - name: Install pypa/build
+      run: |
+        python -m pip install --upgrade pip six setuptools wheel
+        python -m pip install polib build
+        python setup.py build_trans
+    - name: Build a binary wheel and a source tarball
+      run: |
+        python -m build --sdist --wheel --outdir dist/ .
+    - name: Publish distribution 📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}

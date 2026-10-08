@@ -1,0 +1,3 @@
+pypubsub==4.0.3
+numpy
+wxpython<=4.2.1,>=4.0.7.post2

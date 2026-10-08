@@ -1,32 +1,92 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+MANIFEST
+*.py[co]
+*.mo
+.piptools
+new.po
 
-node_modules
-dist
-dist-isolation
-dist-ssr
-docs/manifest
-licenses/*
-*.local
+dist/
+build/
+env/
+*venv/
+*venv.back/
+typings/
+mypy_report/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+libpng-1.2.59*
+libjpeg-turbo-2.1.1*
+libcrypt.so.2
+
 .idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
+.vscode
+.vs
+*.pyproj
 *.sln
-*.sw?
-*.iml
+.ionide
+*.spec
+*.egg-info
+*.whl
+yt-dlg/
+*.log
+*~
+wxPython*.tar.gz
 
-# Tests
-test-results/
-coverage/
+.doit.db.db
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+*.srt
+*.ttml
+*.sbv
+*.vtt
+*.flv
+*.mp4
+*.m4a
+*.m4v
+*.mp3
+*.3gp
+*.wav
+*.ape
+*.mkv
+*.swf
+*.part
+
+# Jekyll
+.jekyll-cache
+_site/
+Gemfile.lock
+
+# SonarQube
+.scannerwork/
+
+# Advanced Installer
+docs/yt-dlg-cache/
+docs/yt-dlg.back.aip
+docs/yt-dlg.back (1).aip
+
+# Obsidian
+.obsidian/
+
+# Snap
+missing-libraries.txt
+missing-stage-packages.yaml
+yt-dlg_*.snap
+squashfs-root/
+
+# just sane ignores
+.*.sw[po]
+*.bak
+*.BAK
+*.orig
+*.class
+.cvsignore
+Thumbs.db
